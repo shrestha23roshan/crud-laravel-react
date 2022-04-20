@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdateProductRequest;
 use App\Models\Product;
 use Illuminate\Http\Request;
 use Illuminate\Support\Str;
@@ -22,11 +23,12 @@ class ProductController extends Controller
 
         $request->validate([
             'title' => 'required',
-            'description' => 'required',
-            // 'image' => 'required|image'
+            'required_image' => 'required|mimes:doc,docx,pdf,txt,csv,jpeg,jpg,png,gif|max:2048'
         ]);
-        $data = $request->except('image');
-        $imageFile = $request->image;
+
+        $data = $request->except('image', 'required_image');
+        $imageFile = $request->file('image');
+        $required_image = $request->file('required_image');
 
         if ($imageFile) {
             $extension = strrchr($imageFile->getClientOriginalName(), '.');
@@ -35,11 +37,18 @@ class ProductController extends Controller
             $data['image'] = isset($image) ? $new_file_name . $extension : NULL;
         }
 
+        if ($required_image) {
+            $extension = strrchr($required_image->getClientOriginalName(), '.');
+            $new_file_name = "reqproduct_" . time();
+            $image = $required_image->move($destinationpath, $new_file_name . $extension);
+            $data['required_image'] = isset($image) ? $new_file_name . $extension : NULL;
+        }
+
         $product = Product::create($data);
         if ($product) {
             return response()->json([
                 'message' => 'Product Created Successfully!!',
-                // 'product' => $product
+                'product' => $product
             ]);
         }
         return response()->json([
@@ -55,21 +64,32 @@ class ProductController extends Controller
         return $product;
     }
 
-    public function update(Request $request, $id)
+    public function update(UpdateProductRequest $request, $id)
     {
+        $destinationpath = 'uploads/products/';
+
         $request->validate([
             'title' => 'required',
             'description' => 'required',
             // 'image' => 'nullable'
         ]);
-        $product = $request->all();
+        $product = $request->except('image');
+        dd($product);
+        $imageFile = $request->image;
+        // dd($imageFile);
+        if ($imageFile) {
+            $extension = strrchr($imageFile->getClientOriginalName(), '.');
+            $new_file_name = "product_" . time();
+            $image = $imageFile->move($destinationpath, $new_file_name . $extension);
+            $data['image'] = isset($image) ? $new_file_name . $extension : null;
+        }
 
         $update_product = Product::where(['id' => $id])->update($product);
 
         if ($update_product) {
             return response()->json([
                 'message' => 'Product updated!',
-                // 'product' => $product
+                'product_update' => $update_product
             ]);
         }
         return response()->json([
