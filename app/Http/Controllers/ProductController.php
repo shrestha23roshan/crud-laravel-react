@@ -44,6 +44,8 @@ class ProductController extends Controller
             $data['required_image'] = isset($image) ? $new_file_name . $extension : NULL;
         }
 
+        // dd($data);
+
         $product = Product::create($data);
         if ($product) {
             return response()->json([
@@ -53,7 +55,7 @@ class ProductController extends Controller
         }
         return response()->json([
             'message' => 'Something goes wrong while creating a product!!.'
-        ], 500);
+        ], 422);
     }
 
     public function show(Product $product)
